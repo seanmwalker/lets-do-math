@@ -4,28 +4,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Lets Do Math</title>
     <style>
-        .hidden {
-            display: none;
+        h1 {
+            text-align: center;
         }
         
+        .hidden, #remainder-block.hidden {
+            display: none;
+        }
+
         #question-count {
             width: 48px;
         }
-        
+
         .box-holder {
             border: 1px solid #c4c4c4;
             padding: 15px;
             background-color: #eee;
         }
-        
+
         .boxes {
             border: 1px solid #c4c4c4;
             padding: 10px;
             font-weight: bold;
             background-color: #fff;
             display: inline-block;
+            width: 300px;
         }
-        
+
+        .boxes-contained {
+            padding: 10px;
+            width: 300px;
+        }
+
         #start {
             background-color: green;
             color: white;
@@ -34,7 +44,7 @@
             padding: 10px;
             border-radius: 8px 8px;
         }
-        
+
         #check-answer {
             font-weight: bold;
             text-transform: uppercase;
@@ -42,18 +52,23 @@
             border-radius: 8px 8px;
             margin-top: 20px;
         }
-        
+
         .shown {
             display: block;
         }
-        
+
         .values {
             font-size: 60px;
-            width: 256px;
+            width: 160px;
             text-align: center;
             margin: auto;
         }
-        
+
+        #remainder-block {
+            display: inline-block;
+            margin-left: 20px;
+        }
+
         #results {
             z-index: 9;
             background-color: #000;
@@ -63,7 +78,7 @@
             top: 0;
             left: 0;
         }
-        
+
         #question-space {
             padding: 0;
             text-align: center;
@@ -72,7 +87,7 @@
             margin-top: 50px;
             width: 50%;
         }
-        
+
         #summary {
             background-color: #fff;
             border: 1px solid #c4c4c4;
@@ -86,7 +101,7 @@
             top: 0;
             left: 0;
         }
-        
+
         #correct {
             background-color: green;
             border: 1px solid #000;
@@ -101,7 +116,7 @@
             height: 80%;
             padding: 30px;
         }
-        
+
         #oops {
             top: 0;
             left: 0;
@@ -116,7 +131,7 @@
             height: 80%;
             padding: 30px;
         }
-        
+
         .close {
             padding: 10px;
             float: right;
@@ -125,20 +140,27 @@
             background-color: #c4c4c4;
             border-radius: 8px 8px;
         }
-        
+
         #seconds-elapsed {
-            width: 150px;
+            width: 120px;
+            margin-left: 15px;
             display: inline-block;
         }
-        
+
         .boxes-contained {
             display: inline-block;
         }
-        
-        @media screen and (max-width: 960px) {
+
+        #start.stop {
+            background-color: red;
+            color: white;
+        }
+
+        @media screen and (max-width: 1055px) {
             body {
                 min-width: 360px;
             }
+
             .boxes-contained,
             .values,
             .boxes {
@@ -151,7 +173,7 @@
         let startTime;
         let endTime;
         let questions = [];
-        let numberOfQuestionsNeeded = 30;
+        let numberOfQuestionsNeeded = 15;
         const operatorTypes = {
             PLUS: '+',
             MINUS: '-',
@@ -195,8 +217,15 @@
         setTimeout(updateSeconds, 1000);
 
         function startTest() {
+            if (document.getElementById('start').classList == 'stop') {
+                // Stop the test.
+                endTest();
+                return;
+            }
+
             document.getElementById('results').classList = 'hidden';
-            document.getElementById('start').setAttribute('disabled', 'disabled');
+            document.getElementById('start').setAttribute('class', 'stop');
+            document.getElementById('start').innerHTML = 'Stop The Test';
             startTime = new Date();
             questions = [];
             document.getElementById('correct-count').innerText = 0;
@@ -205,6 +234,14 @@
             document.getElementById('question-space').classList = '';
             selectedOperatorType = document.getElementById('operator-type').value;
             document.getElementById('operator').innerText = selectedOperatorType;
+
+            if (selectedOperatorType === operatorTypes.DIVIDE) {
+                document.getElementById('remainder-block').classList = '';
+            }
+            else {
+                document.getElementById('remainder-block').classList = 'hidden';
+            }
+
             digits = document.getElementById('digits').value;
             useFivesOrLess = (digits < 10);
             if (useFivesOrLess) {
@@ -217,20 +254,22 @@
         function endTest() {
             endTime = new Date();
             document.getElementById('question-space').classList = 'hidden';
-            document.getElementById('start').removeAttribute('disabled');
+            document.getElementById('start').removeAttribute('stop');
+            document.getElementById('start').innerHTML = 'Start The Test';
             const correctAnswers = document.getElementById('correct-count').innerText;
             document.getElementById('correct-count').innerText = 0;
             document.getElementById('answered-count').innerText = 0;
             const seconds = Math.round((endTime.getTime() - startTime.getTime()) / 1000);
 
             document.getElementById('summary').innerHTML = `
-            <div><h3>Results  <span class="close" onclick="document.getElementById('results').classList='hidden';">close</span></h3></div>
-            <div>Questions: ${questions.length}</div>
-            <div>Correct Answers: ${correctAnswers}</div>
-            <div>Time: ${seconds} seconds</div>
-            `;
+        <div><h3>Results  <span class="close" onclick="document.getElementById('results').classList='hidden';">close</span></h3></div>
+        <div>Questions: ${questions.length}</div>
+        <div>Correct Answers: ${correctAnswers}</div>
+        <div>Time: ${seconds} seconds</div>
+        `;
 
             document.getElementById('results').classList = 'shown';
+            document.getElementById('start').setAttribute('class', '');
         }
 
         function createQuestion() {
@@ -255,9 +294,14 @@
                 }
             }
 
+            if (operatorTypes.DIVIDE === selectedOperatorType && secondValue === 0) {
+                secondValue = 1;
+            }
+
             document.getElementById('first-value').innerText = firstValue;
             document.getElementById('second-value').innerText = secondValue;
             document.getElementById('answer').value = '';
+            document.getElementById('remainder').value = '0';
         }
 
         function handleEntry(e) {
@@ -270,13 +314,20 @@
             const firstValue = parseInt(document.getElementById('first-value').innerText);
             const secondValue = parseInt(document.getElementById('second-value').innerText);
             const answer = parseInt(document.getElementById('answer').value);
+            const remainder = parseInt(document.getElementById('remainder').value) || 0;
 
             if (isNaN(answer)) {
                 return;
             }
 
-            const correctAnswer = operateOnNumbers(firstValue, selectedOperatorType, secondValue);
-            const isCorrect = answer === correctAnswer;
+            let correctAnswer = operateOnNumbers(firstValue, selectedOperatorType, secondValue);
+            let correctRemainder = 0;
+            if (selectedOperatorType === operatorTypes.DIVIDE) {
+                correctAnswer = parseInt(correctAnswer);
+                correctRemainder = parseInt(firstValue - (correctAnswer * secondValue));
+            }
+
+            const isCorrect = answer === correctAnswer && remainder === correctRemainder;
 
             const question = {
                 firstValue: firstValue,
@@ -297,13 +348,13 @@
                 correctCount++;
                 document.getElementById('correct-count').innerText = correctCount;
                 document.getElementById('correct').classList = '';
-                setTimeout(function() {
+                setTimeout(function () {
                     document.getElementById('correct').classList = 'hidden';
                     nextCommand();
                 }, 750);
             } else {
                 document.getElementById('oops').classList = '';
-                setTimeout(function() {
+                setTimeout(function () {
                     document.getElementById('oops').classList = 'hidden';
                     nextCommand();
                 }, 750);
@@ -315,32 +366,35 @@
 <body>
     <h1>Lets Do Math</h1>
     <p>
-        Below you will see a series of questions. Please 'start' the test, and when you have answered all of the questions we will show you how you did!
+        Below you will see a series of questions. Please 'start' the test, and when you have answered all of the
+        questions we will show you how you did!
     </p>
 
     <div class="box-holder">
         <span class="boxes">
-            Number of Questions: <input type="number" id="question-count" value="30" />
+            Number of Questions: <input type="number" id="question-count" value="15" />
         </span> &nbsp;
         <span class="boxes">
             Type of Math: <select id="operator-type" value="+">
-                    <option value="+">Addition</option>
-                    <option value="-">Subtraction</option>
-                    <option value="*">Multiplication</option>
-                    <option value="/">Division</option>
-                </select>
+                <option value="+">Addition</option>
+                <option value="-">Subtraction</option>
+                <option value="*">Multiplication</option>
+                <option value="/">Division</option>
+            </select>
         </span> &nbsp;
         <span class="boxes">
-                Number of Digits: <select id="digits" value=".5">
-                        <option value=".5">Single Number 5 or less</option>
-                        <option value="10">Ones</option>
-                        <option value="100">Tens</option>
-                        <option value="1000">Hundreds</option>
-                        <option value="10000">Thousands</option>
-                        <option value="100000">Tens of Thousands</option>
-                        <option value="1000000">Hundreds of Thousands</option>
-                    </select>
+            Number of Digits: <select id="digits" value=".5">
+                <option value=".5">Single Number 5 or less</option>
+                <option value="10">Ones</option>
+                <option value="100">Tens</option>
+                <option value="1000">Hundreds</option>
+                <option value="10000">Thousands</option>
+                <option value="100000">Tens of Thousands</option>
+                <option value="1000000">Hundreds of Thousands</option>
+            </select>
         </span> &nbsp;
+        <br/>
+        <br/>
         <span class="boxes">
             Number answered: <span id="answered-count">0</span>
         </span>
@@ -361,6 +415,10 @@
         <span id="second-value" class="values"></span>
         <span class="values">&nbsp;=&nbsp;</span>
         <input type="number" id="answer" class="values" value="" onkeypress="handleEntry(event)" />
+        <div id="remainder-block">
+            Remainder:
+            <input type="number" id="remainder" class="values" value="" onkeypress="handleEntry(event)" />
+        </div>
         <div>
             <button id="check-answer" onclick="checkAnswer();">Check Answer</button>
         </div>
